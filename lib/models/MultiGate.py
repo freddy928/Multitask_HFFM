@@ -7,10 +7,10 @@ import sys
 
 sys.path.append(os.getcwd())
 from lib.utils import initialize_weights
-from lib.models.common import Conv, SPP, Bottleneck, BottleneckCSP, Focus, Concat, Detect, SharpenConv, Conv_decoder, C3TR, ELANBlock
+from lib.models.common import Conv, SPP, Bottleneck, BottleneckCSP, Focus, Concat, Detect, SharpenConv, Conv_decoder, C3TR
 from lib.models.common_Multi import gateAttention
 # from lib.models.common_hift import HierarchicalFFM, CrossLayerAttention
-from lib.models.common_hift_pre import HierarchicalFFM, HierarchicalFFM2, CrossLayerAttention, CrossLayerAttention_noheight
+from lib.models.common_hift_pre import HierarchicalFFM, HierarchicalFFM2, CrossLayerAttention
 from lib.models.common_hanet import HCAModule
 from torch.nn import Upsample
 from lib.utils import check_anchor_order
@@ -64,162 +64,6 @@ MultiGate = [
 [ -1, Upsample, [None, 2, 'nearest']],  #39
 [ -1, Conv, [8, 2, 3, 1]] #40 Lane line segmentation head
 ]
-
-
-YOLOP_hffm = [
-[20, 29, 38],   #Det_out_idx, Da_Segout_idx, LL_Segout_idx
-[ -1, Focus, [3, 32, 3]],   #0
-[ -1, Conv, [32, 64, 3, 2]],    #1
-[ -1, BottleneckCSP, [64, 64, 1]],  #2
-[ -1, Conv, [64, 128, 3, 2]],   #3
-[ -1, BottleneckCSP, [128, 128, 3]],    #4
-[ -1, Conv, [128, 256, 3, 2]],  #5
-[ -1, BottleneckCSP, [256, 256, 3]],    #6
-[ -1, Conv, [256, 512, 3, 2]],  #7
-[ -1, SPP, [512, 512, [5, 9, 13]]],     #8
-[ [6, -1], HierarchicalFFM, [256, 512]],    #9
-[ [4, -1], HierarchicalFFM, [128, 256]],    #10
-
-[ -1, BottleneckCSP, [128, 128, 1, False]],     #11
-[ -1, Conv, [128, 128, 3, 2]],      #12
-[ 9, Conv, [256, 128, 3, 1]],      #13
-[ [-1, 12], Concat, [1]],       #14
-[ -1, BottleneckCSP, [256, 256, 1, False]],     #15
-[ -1, Conv, [256, 256, 3, 2]],      #16
-[ 8,  Conv, [512, 256, 1, 1]],   #17
-[ [-1, 16], Concat, [1]],   #18
-[ -1, BottleneckCSP, [512, 512, 1, False]],     #19
-[ [11, 15, 19], Detect,  [1, [[3,9,5,11,4,20], [7,18,6,39,12,31], [19,50,38,81,68,157]], [128, 256, 512]]], #Detection head 20
-
-[ 10, Conv, [128, 128, 3, 1]],   #21
-[ -1, Upsample, [None, 2, 'nearest']],  #22
-[ -1, BottleneckCSP, [128, 64, 1, False]],  #23
-[ -1, Conv, [64, 32, 3, 1]],    #24
-[ -1, Upsample, [None, 2, 'nearest']],  #25
-[ -1, Conv, [32, 16, 3, 1]],    #26
-[ -1, BottleneckCSP, [16, 8, 1, False]],    #27
-[ -1, Upsample, [None, 2, 'nearest']],  #28
-[ -1, Conv, [8, 2, 3, 1]], #29 Driving area segmentation head
-
-[ 10, Conv, [128, 128, 3, 1]],   #30
-[ -1, Upsample, [None, 2, 'nearest']],  #31
-[ -1, BottleneckCSP, [128, 64, 1, False]],  #32
-[ -1, Conv, [64, 32, 3, 1]],    #33
-[ -1, Upsample, [None, 2, 'nearest']],  #34
-[ -1, Conv, [32, 16, 3, 1]],    #35
-[ -1, BottleneckCSP, [16, 8, 1, False]],    #36
-[ -1, Upsample, [None, 2, 'nearest']],  #37
-[ -1, Conv, [8, 2, 3, 1]] #38 Lane line segmentation head
-]
-
-
-YOLOP_hca = [
-[25, 35, 45],   #Det_out_idx, Da_Segout_idx, LL_Segout_idx
-[ -1, Focus, [3, 32, 3]],   #0
-[ -1, Conv, [32, 64, 3, 2]],    #1
-[ -1, BottleneckCSP, [64, 64, 1]],  #2
-[ -1, Conv, [64, 128, 3, 2]],   #3
-[ -1, BottleneckCSP, [128, 128, 3]],    #4
-[ -1, Conv, [128, 256, 3, 2]],  #5
-[ -1, BottleneckCSP, [256, 256, 3]],    #6
-[ -1, Conv, [256, 512, 3, 2]],  #7
-[ -1, SPP, [512, 512, [5, 9, 13]]],     #8
-[ -1, BottleneckCSP, [512, 512, 1, False]],     #9
-[ -1, Conv,[512, 256, 1, 1]],   #10
-[ -1, Upsample, [None, 2, 'nearest']],  #11
-[ [-1, 6], Concat, [1]],    #12
-[ -1, BottleneckCSP, [512, 256, 1, False]], #13
-[ -1, Conv, [256, 128, 1, 1]],  #14
-[ -1, Upsample, [None, 2, 'nearest']],  #15
-[ [-1,4], Concat, [1]],     #16         #Encoder
-[ -1, BottleneckCSP, [256, 128, 1, False]],     #17
-
-[ [17, 9], CrossLayerAttention, [128, 512, True]], #18
-[ -1, Conv, [128, 128, 3, 2]],      #19
-[ [-1, 14], Concat, [1]],       #20
-[ -1, BottleneckCSP, [256, 256, 1, False]],     #21
-[ -1, Conv, [256, 256, 3, 2]],      #22
-[ [-1, 10], Concat, [1]],   #23
-[ -1, BottleneckCSP, [512, 512, 1, False]],     #24
-[ [17, 21, 24], Detect,  [1, [[3,9,5,11,4,20], [7,18,6,39,12,31], [19,50,38,81,68,157]], [128, 256, 512]]], #Detection head 24
-
-[ [17, 9], CrossLayerAttention, [128, 512, True]], #26
-[ -1, Conv, [128, 128, 3, 1]],   #27
-[ -1, Upsample, [None, 2, 'nearest']],  #28
-[ -1, BottleneckCSP, [128, 64, 1, False]],  #29
-[ -1, Conv, [64, 32, 3, 1]],    #30
-[ -1, Upsample, [None, 2, 'nearest']],  #31
-[ -1, Conv, [32, 16, 3, 1]],    #32
-[ -1, BottleneckCSP, [16, 8, 1, False]],    #33
-[ -1, Upsample, [None, 2, 'nearest']],  #34
-[ -1, Conv, [8, 2, 3, 1]], #35 Driving area segmentation head
-
-[ [17, 9], CrossLayerAttention, [128, 512, True]], #36
-[ -1, Conv, [128, 128, 3, 1]],   #37
-[ -1, Upsample, [None, 2, 'nearest']],  #38
-[ -1, BottleneckCSP, [128, 64, 1, False]],  #39
-[ -1, Conv, [64, 32, 3, 1]],    #40
-[ -1, Upsample, [None, 2, 'nearest']],  #41
-[ -1, Conv, [32, 16, 3, 1]],    #42
-[ -1, BottleneckCSP, [16, 8, 1, False]],    #43
-[ -1, Upsample, [None, 2, 'nearest']],  #44
-[ -1, Conv, [8, 2, 3, 1]] #45 Lane line segmentation head
-]
-
-
-YOLOP_hca_noheight = [
-[25, 35, 45],   #Det_out_idx, Da_Segout_idx, LL_Segout_idx
-[ -1, Focus, [3, 32, 3]],   #0
-[ -1, Conv, [32, 64, 3, 2]],    #1
-[ -1, BottleneckCSP, [64, 64, 1]],  #2
-[ -1, Conv, [64, 128, 3, 2]],   #3
-[ -1, BottleneckCSP, [128, 128, 3]],    #4
-[ -1, Conv, [128, 256, 3, 2]],  #5
-[ -1, BottleneckCSP, [256, 256, 3]],    #6
-[ -1, Conv, [256, 512, 3, 2]],  #7
-[ -1, SPP, [512, 512, [5, 9, 13]]],     #8
-[ -1, BottleneckCSP, [512, 512, 1, False]],     #9
-[ -1, Conv,[512, 256, 1, 1]],   #10
-[ -1, Upsample, [None, 2, 'nearest']],  #11
-[ [-1, 6], Concat, [1]],    #12
-[ -1, BottleneckCSP, [512, 256, 1, False]], #13
-[ -1, Conv, [256, 128, 1, 1]],  #14
-[ -1, Upsample, [None, 2, 'nearest']],  #15
-[ [-1,4], Concat, [1]],     #16         #Encoder
-[ -1, BottleneckCSP, [256, 128, 1, False]],     #17
-
-[ [17, 9], CrossLayerAttention_noheight, [128, 512, True]], #18
-[ -1, Conv, [128, 128, 3, 2]],      #19
-[ [-1, 14], Concat, [1]],       #20
-[ -1, BottleneckCSP, [256, 256, 1, False]],     #21
-[ -1, Conv, [256, 256, 3, 2]],      #22
-[ [-1, 10], Concat, [1]],   #23
-[ -1, BottleneckCSP, [512, 512, 1, False]],     #24
-[ [17, 21, 24], Detect,  [1, [[3,9,5,11,4,20], [7,18,6,39,12,31], [19,50,38,81,68,157]], [128, 256, 512]]], #Detection head 24
-
-[ [17, 9], CrossLayerAttention_noheight, [128, 512, True]], #26
-[ -1, Conv, [128, 128, 3, 1]],   #27
-[ -1, Upsample, [None, 2, 'nearest']],  #28
-[ -1, BottleneckCSP, [128, 64, 1, False]],  #29
-[ -1, Conv, [64, 32, 3, 1]],    #30
-[ -1, Upsample, [None, 2, 'nearest']],  #31
-[ -1, Conv, [32, 16, 3, 1]],    #32
-[ -1, BottleneckCSP, [16, 8, 1, False]],    #33
-[ -1, Upsample, [None, 2, 'nearest']],  #34
-[ -1, Conv, [8, 2, 3, 1]], #35 Driving area segmentation head
-
-[ [17, 9], CrossLayerAttention_noheight, [128, 512, True]], #36
-[ -1, Conv, [128, 128, 3, 1]],   #37
-[ -1, Upsample, [None, 2, 'nearest']],  #38
-[ -1, BottleneckCSP, [128, 64, 1, False]],  #39
-[ -1, Conv, [64, 32, 3, 1]],    #40
-[ -1, Upsample, [None, 2, 'nearest']],  #41
-[ -1, Conv, [32, 16, 3, 1]],    #42
-[ -1, BottleneckCSP, [16, 8, 1, False]],    #43
-[ -1, Upsample, [None, 2, 'nearest']],  #44
-[ -1, Conv, [8, 2, 3, 1]] #45 Lane line segmentation head
-]
-
 
 class MCnet(nn.Module):
     def __init__(self, block_cfg, **kwargs):
@@ -295,7 +139,7 @@ class MCnet(nn.Module):
 
 
 def get_net(cfg, **kwargs):
-    m_block_cfg = YOLOP_hca
+    m_block_cfg = MultiGate
     model = MCnet(m_block_cfg, **kwargs)
     return model
 
